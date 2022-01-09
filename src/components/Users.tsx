@@ -1,22 +1,16 @@
 //import liraries
 import React, { Component, useState, useEffect, useReducer, Dispatch } from 'react';
 import { View, Text, StyleSheet, Button } from 'react-native';
-import type {StateType, ActionType} from '../types';
+import type {StateType, ActionType, UsersType} from '../types';
 import axios from 'axios';
+import useAsync from '../hooks/useAsync'
 
-function reducer(state: StateType, action: ActionType ): StateType{
-    switch (action.type) {
-        case 'LOADING':
-            return {
-                loading: true,
-                data: null
-            };
-        case 'SUCCESS':
-            return {
-                loading: false,
-                data: action.data
-            }
-    }
+async function getUsers():Promise<UsersType> {
+    const response = await axios.get(
+        'https://jsonplaceholder.typicode.com/users'
+    );
+    console.log("in getUsers function ")
+    return response.data
 }
 
 const Initial_State: StateType = {
@@ -29,27 +23,8 @@ const Users = () => {
     // const [loading, setLoading] = useState(false);
     // const [error, setError] = useState(null);
 
-    const [state, dispatch] = useReducer(reducer, Initial_State);
-
-    const fetchUsers = async () => {
-        dispatch({type: 'LOADING', data: null});
-        try {
-            // setError(null);
-            // setUsers(undefined);
-            // setLoading(true);
-            const response = await axios.get(
-                'https://jsonplaceholder.typicode.com/users'
-            );
-        // setUsers(response.data);
-        dispatch({type: 'SUCCESS', data: response.data})
-        } catch(e) {
-            console.log("error happened during fetchUsers : ", e)
-        }
-    };
+    const [state, refetch] = useAsync(getUsers, []);
     
-    useEffect(() => {
-        fetchUsers();
-    }, [])
     const { loading, data: users} = state;
 
     if (loading) return <Text>로딩중....</Text>;
@@ -63,7 +38,7 @@ const Users = () => {
                     {user.username} ({user.name})
                 </Text>
             ))}
-            <Button title='Reload' onPress={fetchUsers} />
+            <Button title='Reload' onPress={refetch} />
         </View>
     );
 };
